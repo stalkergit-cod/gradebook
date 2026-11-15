@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Недельный журнал отметок, расчёт среднего балла и личная мотивация за учёбу.">
+<meta name="theme-color" content="#5b5bd6">
+<meta name="application-name" content="Мои Отметки">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Мои Отметки">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./icons/app-icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<title>Мои Отметки</title>
+<style>
+  :root{
+    --bg:#f3f4fb;
+    --card:#ffffff;
+    --ink:#1e2235;
+    --muted:#6b7194;
+    --line:#e5e8f4;
+    --accent:#5b5bd6;
+    --accent-soft:#eeeefc;
+    --green:#1f9d55;  --green-bg:#e3f6ec;
+    --amber:#b7791f;  --amber-bg:#fdf3dd;
+    --orange:#c05621; --orange-bg:#fdeadd;
+    --red:#c53030;    --red-bg:#fde8e8;
+    --radius:16px;
+    --shadow:0 6px 24px rgba(40,44,90,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.5;
+    padding-bottom:calc(115px + env(safe-area-inset-bottom, 0px));
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+
+  /* ---------- header ---------- */
+  header{
+    background:linear-gradient(135deg,#5b5bd6 0%,#7c4dd6 55%,#9a4dd0 100%);
+    color:#fff;
+    padding:34px 0 78px;
+    border-radius:0 0 28px 28px;
+  }
+  .head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand-lockup{display:flex;align-items:center;gap:12px}
+  .brand-icon{width:46px;height:46px;display:block;border-radius:13px;box-shadow:0 4px 12px rgba(28,22,90,.22);flex:none}
+  h1{font-size:clamp(22px,4vw,30px);font-weight:800;letter-spacing:.2px}
+  .subtitle{opacity:.85;margin-top:6px;font-size:14.5px}
+  .head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .class-picker{display:flex;align-items:center;gap:8px;color:#fff;font-size:13.5px;font-weight:600}
+  .class-picker select{
+    border:1px solid rgba(255,255,255,.38);border-radius:10px;
+    padding:8px 10px;background:rgba(255,255,255,.16);color:#fff;
+    font:inherit;font-weight:700;cursor:pointer;
+  }
+  .class-picker select:focus{outline:2px solid rgba(255,255,255,.7);outline-offset:2px}
+  .class-picker option{background:#fff;color:#1e2235}
+  .btn-reset{
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.35);
+    color:#fff;border-radius:10px;
+    padding:8px 14px;font-size:13.5px;cursor:pointer;
+    transition:background .15s;
+  }
+  .btn-reset:hover{background:rgba(255,255,255,.28)}
+  .btn-install{
+    border:1px solid rgba(255,255,255,.55);border-radius:10px;
+    padding:8px 13px;background:#fff;color:#5149c5;
+    font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;
+    box-shadow:0 2px 8px rgba(30,34,70,.12);transition:transform .12s,background .12s;
+  }
+  .btn-install:hover{background:#f4f3ff;transform:translateY(-1px)}
+
+  /* ---------- summary cards ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-top:14px;
+  }
+  .stat{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    min-width:0;
+  }
+  .stat .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .stat .value{font-size:26px;font-weight:800;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .sub{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #overallAvg,#yearOverallAvg{transition:color .2s}
+
+  /* ---------- sections ---------- */
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-top:20px;
+    overflow:hidden;
+  }
+  .tab-panel > .card:first-child{margin-top:-52px}
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:18px 20px 12px;
+    flex-wrap:wrap;
+  }
+  .card-head h2{font-size:18px;font-weight:700}
+  .card-head .hint{font-size:13px;color:var(--muted)}
+
+  /* ---------- table shared styles ---------- */
+  .thead,.trow{
+    display:grid;
+    gap:12px;
+    align-items:center;
+    padding:10px 20px;
+  }
+  .thead{
+    font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;
+    border-bottom:1px solid var(--line);
+    padding-top:6px;padding-bottom:10px;
+  }
+  .trow{border-bottom:1px solid var(--line)}
+  .trow:last-child{border-bottom:none}
+  .trow:hover{background:#fafaff}
+
+  .subj-input{
+    width:100%;border:1px solid transparent;border-radius:8px;
+    font-size:15px;font-weight:600;color:var(--ink);
+    padding:6px 8px;background:transparent;
+    transition:border-color .15s,background .15s;
+  }
+  .subj-input:hover{background:#f2f3fb}
+  .subj-input:focus{outline:none;border-color:var(--accent);background:#fff}
+
+  .grades-cell{min-width:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:14px;font-weight:700;
+    padding:3px 6px 3px 10px;border-radius:999px;
+    animation:pop .18s ease-out;
+  }
+  @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  .chip button{
+    border:none;background:rgba(0,0,0,.08);color:inherit;
+    width:18px;height:18px;border-radius:50%;
+    font-size:12px;line-height:1;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    opacity:.65;
+  }
+  .chip button:hover{opacity:1;background:rgba(0,0,0,.16)}
+  .chip.g-hi{background:var(--green-bg);color:var(--green)}
+  .chip.g-mid{background:var(--amber-bg);color:var(--amber)}
+  .chip.g-low{background:var(--orange-bg);color:var(--orange)}
+  .chip.g-bad{background:var(--red-bg);color:var(--red)}
+  .empty-note{font-size:13px;color:var(--muted);font-style:italic}
+
+  .quick{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+  .quick button{
+    width:26px;height:26px;border-radius:8px;
+    border:1px solid var(--line);background:#fbfbfe;
+    font-size:12.5px;font-weight:700;color:var(--muted);
+    cursor:pointer;transition:all .12s;
+  }
+  .quick button:hover{
+    border-color:var(--accent);color:var(--accent);
+    background:var(--accent-soft);transform:translateY(-1px);
+  }
+
+  .avg-cell{text-align:right;min-width:0}
+  .avg-num{font-size:21px;font-weight:800;line-height:1.2}
+  .avg-num.none{color:#b9bdd6;font-weight:600}
+  .avg-formula{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .del-subj{
+    border:none;background:transparent;color:#c3c7dd;
+    font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .12s;
+  }
+  .del-subj:hover{background:var(--red-bg);color:var(--red)}
+
+  .prediction{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:12px;font-size:20px;font-weight:800;
+  }
+  .prediction.none{background:#f0f1f7;color:#aeb3ca}
+  .prediction.g-hi{background:var(--green-bg);color:var(--green)}
+  .prediction.g-mid{background:var(--amber-bg);color:var(--amber)}
+  .prediction.g-low{background:var(--orange-bg);color:var(--orange)}
+  .prediction.g-bad{background:var(--red-bg);color:var(--red)}
+
+  /* add subject bar */
+  .add-bar{
+    display:flex;gap:10px;padding:14px 20px;background:#fafaff;
+    border-top:1px solid var(--line);flex-wrap:wrap;
+  }
+  .add-bar input{
+    flex:1;min-width:180px;
+    border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;font-size:14.5px;background:#fff;color:var(--ink);
+  }
+  .add-bar input:focus{outline:none;border-color:var(--accent)}
+  .btn-primary{
+    background:var(--accent);color:#fff;border:none;border-radius:10px;
+    padding:9px 18px;font-size:14.5px;font-weight:600;cursor:pointer;
+    transition:background .15s,transform .1s;
+  }
+  .btn-primary:hover{background:#4a4ac4}
+  .btn-primary:active{transform:scale(.97)}
+
+  .btn-secondary{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    border-radius:10px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .15s;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn-secondary:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+    background:var(--accent-soft);
+  }
+
+  /* ---------- chart ---------- */
+  .chart{padding:6px 20px 20px}
+  .bar-row{display:grid;grid-template-columns:150px minmax(0,1fr) 46px;gap:10px;align-items:center;padding:5px 0}
+  .bar-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-track{background:#eef0f9;border-radius:999px;height:14px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:999px;transition:width .45s ease}
+  .bar-val{font-size:13px;font-weight:700;text-align:right;color:var(--muted)}
+  .chart-empty{color:var(--muted);font-size:14px;font-style:italic;padding:8px 0 4px}
+
+  /* ---------- how-to ---------- */
+  .howto{padding:4px 20px 22px;font-size:14.5px;color:#3c4160}
+  .formula-box{
+    background:var(--accent-soft);
+    border:1px dashed #b9b9ee;
+    border-radius:12px;
+    padding:14px 16px;
+    margin:12px 0;
+    text-align:center;
+    font-size:16px;
+  }
+  .formula-box b{color:var(--accent)}
+  .example{
+    background:#fafaff;border:1px solid var(--line);border-radius:12px;
+    padding:12px 16px;margin-top:10px;font-size:14px;
+  }
+  .example code{
+    background:#eef0f9;border-radius:6px;padding:2px 7px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;
+  }
+  .howto ul{margin:8px 0 0 20px}
+  .howto li{margin:4px 0}
+
+  footer{text-align:center;color:var(--muted);font-size:12.5px;margin-top:30px}
+
+  /* ---------- tabs & period controls ---------- */
+  .tab-panel{display:none}
+  .tab-panel.active{display:block;animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .period-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:16px 20px;background:#fafaff;border-bottom:1px solid var(--line)}
+  .period-title{font-size:14px;color:var(--muted)}
+  .period-title b{display:block;color:var(--ink);font-size:16px}
+  .select-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .select-field{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--muted)}
+  .select-field select{border:1px solid var(--line);border-radius:10px;padding:9px 34px 9px 11px;background:#fff;color:var(--ink);font:inherit;cursor:pointer}
+  .select-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* calendar & week picker */
+  .week-picker-wrap{position:relative;flex:1;min-width:145px}
+  .week-picker-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer;box-shadow:0 1px 2px rgba(30,34,70,.03);transition:border-color .15s,box-shadow .15s}
+  .week-picker-trigger:hover,.week-picker-trigger[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .week-picker-trigger:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .week-trigger-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .week-trigger-icon{width:17px;height:17px;flex:none;color:var(--accent)}
+  .week-calendar{position:absolute;z-index:100;top:calc(100% + 9px);right:0;width:min(340px,calc(100vw - 36px));padding:14px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 44px rgba(30,34,70,.2)}
+  .week-calendar[hidden]{display:none}
+  .calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .calendar-heading strong{font-size:15px;color:var(--ink);text-transform:capitalize}
+  .calendar-month-btn{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+  .calendar-month-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .calendar-weekdays,.calendar-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+  .calendar-weekdays{margin-bottom:5px}
+  .calendar-weekdays span{text-align:center;font-size:10.5px;font-weight:700;color:#969bb4;padding:4px 0}
+  .calendar-week{width:100%;padding:2px;border:1px solid transparent;border-radius:10px;background:transparent;cursor:pointer;transition:background .12s,border-color .12s}
+  .calendar-week:hover{background:#f3f3ff}
+  .calendar-week.selected{background:var(--accent-soft);border-color:#d5d4fb}
+  .calendar-day{display:grid;place-items:center;aspect-ratio:1;border-radius:7px;color:var(--ink);font-size:12px;font-weight:600}
+  .calendar-day.other-month{color:#c3c7d9;font-weight:500}
+  .calendar-week.selected .calendar-day{color:var(--accent);font-weight:800}
+  .calendar-week:hover .calendar-day.other-month{color:#888ca8}
+  .calendar-foot{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;color:var(--muted);font-size:11.5px;display:flex;align-items:center;gap:7px}
+  .calendar-foot::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+
+  /* specific table grid definitions */
+  .week-intro{padding:20px;display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#f4f4ff,#faf7ff);border-bottom:1px solid var(--line)}
+  .week-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;background:var(--accent-soft);font-size:23px;flex:none}
+  .week-intro h2{font-size:18px;margin-bottom:2px}
+  .week-intro p{font-size:13.5px;color:var(--muted)}
+  .week-table .thead,.week-table .trow{grid-template-columns:minmax(130px,1.1fr) minmax(0,2.5fr) 120px}
+  .week-note{margin-top:14px;padding:12px 14px;border-radius:12px;background:#eaf7ef;color:#277449;font-size:13.5px}
+
+  /* ---------- weekly money game ---------- */
+  .money-week-card .card-head{align-items:flex-start}
+  .money-payout{font-size:24px;font-weight:850;white-space:nowrap;color:var(--accent)}
+  .money-payout.positive,.money-amount.positive{color:var(--green)}
+  .money-payout.negative,.money-amount.negative{color:var(--red)}
+  .money-payout.zero,.money-amount.zero{color:var(--muted)}
+  .money-content{padding:2px 20px 20px}
+  .money-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .money-summary-item{padding:13px 14px;border:1px solid var(--line);background:#fafaff;border-radius:12px;min-width:0}
+  .money-summary-label{font-size:12px;color:var(--muted);font-weight:700}
+  .money-summary-value{font-size:18px;font-weight:800;margin-top:4px;white-space:nowrap}
+  .money-disabled-note{padding:16px 20px 20px;color:var(--muted);font-size:14px}
+  .money-disabled-note[hidden],.money-content[hidden]{display:none!important}
+  .money-remarks{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+  .money-remarks-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .money-remarks h3{font-size:15px}
+  .money-remarks .hint{font-size:12.5px;color:var(--muted)}
+  .remark-add-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+  .remark-add-row input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;color:var(--ink)}
+  .remark-add-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .remark-list{display:grid;gap:7px}
+  .remark-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:#fffaf4;border:1px solid #f4e8d8;border-radius:10px;font-size:13.5px}
+  .remark-delete{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#9b8f80;cursor:pointer;font-size:17px;flex:none}
+  .remark-delete:hover{background:var(--red-bg);color:var(--red)}
+
+  /* ---------- money settings tab ---------- */
+  .settings-content{padding:0 20px 20px}
+  .settings-callout{padding:13px 15px;margin:0 0 16px;background:var(--accent-soft);border:1px solid #e1e0fb;border-radius:12px;color:#4c4ca7;font-size:13.5px}
+  .settings-config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:22px}
+  .setting-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+  .setting-field select,.setting-field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink);font:inherit;font-weight:600}
+  .setting-field select:focus,.setting-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .settings-section-title{font-size:16px;font-weight:750;margin:2px 0 4px}
+  .settings-section-hint{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .money-rate-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .money-rate-row{display:grid;grid-template-columns:1fr minmax(110px,150px);align-items:center;gap:12px;padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:#fff}
+  .money-rate-grade{display:flex;align-items:center;gap:9px;font-weight:700;font-size:13.5px}
+  .money-rate-badge{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-weight:850}
+  .money-rate-input-wrap{display:flex;align-items:center;gap:6px}
+  .money-rate-input{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 8px;text-align:right;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink)}
+  .money-rate-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .money-rate-currency{font-size:11.5px;color:var(--muted);font-weight:700}
+  .money-toggle{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .money-toggle input{position:absolute;opacity:0;width:1px;height:1px}
+  .money-switch{position:relative;width:46px;height:27px;border-radius:999px;background:#cbd0e2;transition:background .16s;flex:none}
+  .money-switch::after{content:"";position:absolute;left:3px;top:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:transform .16s}
+  .money-toggle input:checked+.money-switch{background:var(--accent)}
+  .money-toggle input:checked+.money-switch::after{transform:translateX(19px)}
+  .money-toggle input:focus-visible+.money-switch{outline:2px solid var(--accent);outline-offset:3px}
+
+  /* ---------- weekly PDF report & sharing ---------- */
+  .report-card .card-head{align-items:center}
+  .report-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .report-status{padding:0 20px 16px;font-size:13px;color:var(--muted)}
+  .report-status:empty{display:none}
+  .report-status.success{color:var(--green)}
+  .report-status.warning{color:var(--amber)}
+  .report-status.error{color:var(--red)}
+  .report-settings-note{padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fafaff;color:var(--muted);font-size:13.5px}
+
+  .quarter-table .thead,.quarter-table .trow{grid-template-columns:minmax(120px,1.05fr) minmax(0,2.2fr) 115px 115px 36px}
+
+  /* year table & quarter marks */
+  .year-table .thead,.year-table .trow{
+    grid-template-columns:minmax(130px,1.25fr) repeat(4,minmax(54px,70px)) 110px 95px;
+  }
+  .year-table .q-pills{display:contents}
+  .year-table .q-pill-item{display:flex;flex-direction:column;align-items:center}
+  .year-table .q-label{display:none}
+  .q-select{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:6px 2px;
+    font-size:14.5px;
+    font-weight:800;
+    text-align:center;
+    text-align-last:center;
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .q-select:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .q-select.g-hi{background:var(--green-bg);color:var(--green);border-color:#b9e8ce}
+  .q-select.g-mid{background:var(--amber-bg);color:var(--amber);border-color:#f8e3b2}
+  .q-select.g-low{background:var(--orange-bg);color:var(--orange);border-color:#fcd0b3}
+  .q-select.g-bad{background:var(--red-bg);color:var(--red);border-color:#fac5c5}
+
+  .mobile-only{display:none}
+
+  /* bottom navigation (4 tabs) */
+  .bottom-nav{
+    position:fixed;z-index:50;left:50%;bottom:calc(12px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);
+    width:min(600px,calc(100% - 24px));
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:6px;padding:6px;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(16px);
+    border:1px solid rgba(220,222,238,.9);border-radius:18px;
+    box-shadow:0 12px 38px rgba(30,34,70,.18);
+  }
+  .nav-btn{
+    border:0;background:transparent;border-radius:13px;
+    padding:10px 8px;color:var(--muted);font-weight:700;font-size:13px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    gap:7px;transition:.15s;white-space:nowrap;
+  }
+  .nav-btn .nav-icon{font-size:18px;line-height:1}
+  .nav-btn.active{background:var(--accent);color:#fff;box-shadow:0 5px 14px rgba(91,91,214,.25)}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:760px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .money-summary-grid,.settings-config-grid,.money-rate-grid{grid-template-columns:1fr}
+    .report-actions{width:100%}
+    .report-actions .btn-primary,.report-actions .btn-secondary{flex:1;justify-content:center}
+    .period-bar{align-items:flex-start}
+    .select-group{width:100%}
+    .select-field{flex:1}
+    .select-field select{flex:1;min-width:0}
+    .week-picker-wrap{min-width:0}
+
+    .week-table .thead{display:none}
+    .week-table .trow{
+      grid-template-columns:1fr auto;
+      grid-template-areas:"name avg" "grades grades";
+      padding:14px 16px;
+    }
+    .week-table .cell-name{grid-area:name}
+    .week-table .cell-grades{grid-area:grades}
+    .week-table .cell-avg{grid-area:avg}
+
+    .quarter-table .thead{display:none}
+    .quarter-table .trow{
+      grid-template-columns:1fr auto auto;
+      grid-template-areas:"name avg predict" "grades grades grades" "del del del";
+      padding:14px 16px;
+    }
+    .quarter-table .cell-name{grid-area:name}
+    .quarter-table .cell-grades{grid-area:grades}
+    .quarter-table .cell-avg{grid-area:avg}
+    .quarter-table .cell-predict{grid-area:predict}
+    .quarter-table .cell-del{grid-area:del;justify-self:end}
+
+    .year-table .thead{display:none}
+    .year-table .trow{
+      grid-template-columns:1fr auto;
+      grid-template-areas:
+        "name final"
+        "quarters quarters"
+        "formula avg";
+      gap:10px;
+      padding:14px 16px;
+    }
+    .year-table .cell-name{grid-area:name}
+    .year-table .cell-final{grid-area:final;justify-self:end}
+    .year-table .cell-quarters{grid-area:quarters}
+    .year-table .q-pills{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+    }
+    .year-table .q-label{
+      display:block;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      text-align:center;
+      margin-bottom:3px;
+    }
+    .year-table .cell-avg{grid-area:avg;justify-self:end;text-align:right}
+    .mobile-only{display:block}
+    .year-table .cell-formula{grid-area:formula;font-size:12px;color:var(--muted);align-self:center}
+
+    .bar-row{grid-template-columns:110px minmax(0,1fr) 42px}
+  }
+
+  @media(max-width:420px){
+    .stats{grid-template-columns:1fr 1fr;gap:10px}
+    .stat .value{font-size:21px}
+    .nav-btn{flex-direction:column;gap:3px;padding:6px 2px;font-size:10px;line-height:1.1}
+    .nav-btn .nav-icon{font-size:15px}
+  }
+
+  /* ---------- print ---------- */
+  @media print{
+    body{background:#fff;padding:0}
+    header{background:none;color:var(--ink);padding:10px 0;border-radius:0}
+    .bottom-nav,.period-bar,.btn-reset,.btn-install,.quick,.add-bar,.del-subj,.chip button,.report-actions,.report-status{display:none!important}
+    .card,.stat{box-shadow:none;border:1px solid #ddd}
+    .tab-panel{display:block!important;margin-bottom:30px}
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="wrap head-row">
+    <div class="brand-lockup">
+      <svg class="brand-icon" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="brand-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5556d8"/><stop offset=".58" stop-color="#744bd2"/><stop offset="1" stop-color="#9849c9"/></linearGradient>
+          <linearGradient id="brand-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe38a"/><stop offset="1" stop-color="#ffb938"/></linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="112" fill="url(#brand-bg)"/>
+        <path d="M90 174 104 158 184 146 256 174 328 146 408 158 422 174 422 340 406 354 328 344 256 382 184 344 106 354 90 340Z" fill="#493a99"/>
+        <path d="m105 162 76-9 75 26v191l-66-29-74 9-17-11V179Z" fill="#fff" stroke="#e5e2f8" stroke-width="2"/>
+        <path d="m256 179 75-26 76 9 6 17v160l-17 11-74-9-66 29Z" fill="#f8f7ff" stroke="#e5e2f8" stroke-width="2"/>
+        <path d="M256 176v199" fill="none" stroke="#d4cff4" stroke-width="5" stroke-linecap="round"/>
+        <g fill="none" stroke="#bbb7e2" stroke-width="8" stroke-linecap="round"><path d="m119 207 34-10 65 2"/><path d="m119 245 34-10 65 2"/><path d="m119 283 31-8 52 2"/><path d="m292 199 48-11 49 8"/><path d="m292 237 48-11 49 8"/></g>
+        <circle cx="350" cy="294" r="43" fill="#2ec77d" stroke="#fff" stroke-width="7"/>
+        <path d="m329 294 14 14 29-31" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="384" cy="127" r="35" fill="url(#brand-gold)" stroke="#fff" stroke-width="6"/>
+        <path d="m384 105 6.5 14 15.5 1.5-11.5 10 3.5 15-14-7.5-14 7.5 3.5-15-11.5-10 15.5-1.5Z" fill="#fff"/>
+      </svg>
+      <div>
+        <h1>Мои Отметки</h1>
+        <div class="subtitle">Журнал успеваемости: неделя, четверть и итоговые отметки за год</div>
+      </div>
+    </div>
+    <div class="head-actions">
+      <label class="class-picker" for="classSelect"><span>Мой класс</span><select id="classSelect" aria-label="Выбрать класс">
+        <option value="1">1 класс</option><option value="2">2 класс</option><option value="3">3 класс</option><option value="4">4 класс</option><option value="5">5 класс</option><option value="6">6 класс</option><option value="7">7 класс</option><option value="8">8 класс</option><option value="9">9 класс</option><option value="10">10 класс</option><option value="11">11 класс</option>
+      </select></label>
+      <button class="btn-install" id="btnInstallApp" type="button" hidden>⇩ Установить</button>
+      <button class="btn-reset" id="btnReset" title="Удалить все данные и вернуть пример">⟲ Сбросить всё</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 1. ТАБ: НЕДЕЛЯ -->
+  <section class="tab-panel active" id="weekPanel" aria-label="Отметки за неделю">
+    <section class="card">
+      <div class="period-bar">
+        <div class="period-title"><b>Недельный журнал</b>Добавляй новые отметки здесь</div>
+        <div class="select-group">
+          <label class="select-field">Четверть <select id="weekQuarterSelect"></select></label>
+          <div class="select-field week-field-label"><span>Неделя</span><div class="week-picker-wrap" id="weekPickerWrap">
+            <button class="week-picker-trigger" id="weekPickerTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="weekCalendar">
+              <span class="week-trigger-text" id="weekPickerLabel">Выбрать неделю</span>
+              <svg class="week-trigger-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <div class="week-calendar" id="weekCalendar" role="dialog" aria-label="Выбор недели в календаре" hidden>
+              <div class="calendar-heading"><button class="calendar-month-btn" type="button" data-calendar="prev" aria-label="Предыдущий месяц">‹</button><strong id="calendarMonthLabel"></strong><button class="calendar-month-btn" type="button" data-calendar="next" aria-label="Следующий месяц">›</button></div>
+              <div class="calendar-weekdays" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+              <div id="calendarWeeks"></div>
+              <div class="calendar-foot" id="calendarFoot">Нажми на любую строку, чтобы выбрать неделю</div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+      <div class="week-intro"><div class="week-icon">✏️</div><div><h2 id="weekHeading">Отметки за неделю</h2><p>Нажми на цифру от 1 до 10. Отметка сразу появится в итогах четверти.</p></div></div>
+      <div class="week-table">
+        <div class="thead"><div>Предмет</div><div>Отметки на этой неделе</div><div style="text-align:right">Средний</div></div>
+        <div id="weekRows"></div>
+      </div>
+    </section>
+
+    <section class="card money-week-card" aria-label="Расчёт денежной награды за неделю">
+      <div class="card-head">
+        <div>
+          <h2>💰 Награда за выбранную неделю</h2>
+          <div class="hint" id="moneyWeekCaption">Сумма пересчитывается автоматически</div>
+        </div>
+        <div class="money-payout zero" id="weekPayout">0,00 BYN</div>
+      </div>
+      <div class="money-disabled-note" id="moneyDisabledNote" hidden>Денежная мотивация отключена. Её можно включить во вкладке «Настройки».</div>
+      <div class="money-content" id="moneyContent">
+        <div class="money-summary-grid">
+          <div class="money-summary-item"><div class="money-summary-label">Сумма за отметки</div><div class="money-summary-value money-amount zero" id="weekGradeMoney">0,00 BYN</div></div>
+          <div class="money-summary-item"><div class="money-summary-label">Вычет за замечания · <span id="weekRemarkCount">0</span></div><div class="money-summary-value money-amount zero" id="weekRemarkMoney">0,00 BYN</div></div>
+          <div class="money-summary-item"><div class="money-summary-label">К выплате в конце недели</div><div class="money-summary-value money-amount zero" id="weekTotalMoney">0,00 BYN</div></div>
+        </div>
+        <div class="money-remarks">
+          <div class="money-remarks-head"><h3>Замечания в дневнике</h3><div class="hint">За каждое замечание вычитается сумма из настроек</div></div>
+          <div class="remark-add-row"><input type="text" id="remarkInput" maxlength="100" placeholder="Кратко опиши замечание (необязательно)"><button class="btn-primary" id="btnAddRemark" type="button">+ Добавить замечание</button></div>
+          <div class="remark-list" id="weekRemarks"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card report-card" aria-label="Отчёт за неделю">
+      <div class="card-head">
+        <div><h2>📄 Отчёт за неделю</h2><div class="hint">PDF: отметки, замечания и расчёт заработанной суммы</div></div>
+        <div class="report-actions">
+          <button class="btn-secondary" id="btnDownloadReport" type="button">↓ Скачать PDF</button>
+          <button class="btn-primary" id="btnSendReport" type="button">↗ Отправить отчёт</button>
+        </div>
+      </div>
+      <div class="report-status" id="reportStatus" role="status" aria-live="polite"></div>
+    </section>
+
+    <div class="week-note">✓ Все изменения сохраняются автоматически и сразу учитываются на вкладке «Четверть».</div>
+  </section>
+
+  <!-- 2. ТАБ: ЧЕТВЕРТЬ -->
+  <section class="tab-panel" id="quarterPanel" aria-label="Отметки за четверть">
+    <section class="card">
+      <div class="period-bar">
+        <div class="period-title"><b>Итоги четверти</b>Все отметки, добавленные по неделям</div>
+        <div class="select-group"><label class="select-field">Четверть <select id="quarterSelect"></select></label></div>
+      </div>
+    </section>
+    <section class="stats">
+      <div class="stat"><div class="label">Средний балл</div><div class="value" id="overallAvg">—</div><div class="sub" id="overallFormula">нет отметок</div></div>
+      <div class="stat"><div class="label">Всего отметок</div><div class="value" id="totalMarks">0</div><div class="sub" id="totalSubjects">предметов: 0</div></div>
+      <div class="stat"><div class="label">Лучший предмет</div><div class="value" id="bestSubject" style="font-size:18px">—</div><div class="sub" id="bestAvg">&nbsp;</div></div>
+      <div class="stat"><div class="label">Стоит подтянуть</div><div class="value" id="worstSubject" style="font-size:18px">—</div><div class="sub" id="worstAvg">&nbsp;</div></div>
+    </section>
+    <section class="card quarter-table">
+      <div class="card-head"><h2>Отметки по предметам</h2><div class="hint">Прогноз рассчитывается по текущему среднему баллу</div></div>
+      <div class="thead"><div>Предмет</div><div>Отметки за четверть</div><div style="text-align:right">Средний</div><div style="text-align:center">За четверть</div><div></div></div>
+      <div id="quarterRows"></div>
+      <div class="add-bar"><input type="text" id="newSubject" maxlength="40" placeholder="Новый предмет"><button class="btn-primary" id="btnAddSubject">+ Добавить предмет</button></div>
+    </section>
+    <section class="card"><div class="card-head"><h2>📊 Сравнение предметов</h2><div class="hint">средний балл за выбранную четверть</div></div><div class="chart" id="chart"></div></section>
+  </section>
+
+  <!-- 3. ТАБ: ГОД -->
+  <section class="tab-panel" id="yearPanel" aria-label="Итоги года">
+    <section class="card">
+      <div class="period-bar">
+        <div class="period-title"><b>Итоги учебного года</b>Четвертные отметки и расчет годового балла</div>
+        <div class="select-group">
+          <button class="btn-secondary" id="btnSyncFromQuarters" type="button" title="Перенести прогнозируемые отметки из четвертей">⚡ Заполнить из четвертей</button>
+          <button class="btn-secondary" id="btnClearYearMarks" type="button" title="Очистить все четвертные отметки">⟲ Очистить</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><div class="label">Годовой средний балл</div><div class="value" id="yearOverallAvg">—</div><div class="sub" id="yearOverallFormula">нет отметок</div></div>
+      <div class="stat"><div class="label">Аттестовано</div><div class="value" id="yearTotalCount">0 / 0</div><div class="sub" id="yearTotalSubjects">предметов: 0</div></div>
+      <div class="stat"><div class="label">Лучший предмет года</div><div class="value" id="yearBestSubject" style="font-size:18px">—</div><div class="sub" id="yearBestAvg">&nbsp;</div></div>
+      <div class="stat"><div class="label">Стоит подтянуть</div><div class="value" id="yearWorstSubject" style="font-size:18px">—</div><div class="sub" id="yearWorstAvg">&nbsp;</div></div>
+    </section>
+
+    <section class="card year-table">
+      <div class="card-head">
+        <h2>Сводная ведомость за год</h2>
+        <div class="hint">Выбери четвертные отметки (I–IV) — годовая отметка посчитается автоматически</div>
+      </div>
+      <div class="thead">
+        <div>Предмет</div>
+        <div style="text-align:center">I четв.</div>
+        <div style="text-align:center">II четв.</div>
+        <div style="text-align:center">III четв.</div>
+        <div style="text-align:center">IV четв.</div>
+        <div style="text-align:right">Средний</div>
+        <div style="text-align:center">Годовая</div>
+      </div>
+      <div id="yearRows"></div>
+      <div class="add-bar">
+        <input type="text" id="newSubjectYear" maxlength="40" placeholder="Новый предмет">
+        <button class="btn-primary" id="btnAddSubjectYear">+ Добавить предмет</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>📊 Рейтинг предметов за год</h2>
+        <div class="hint">средний балл по четвертным отметкам</div>
+      </div>
+      <div class="chart" id="yearChart"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>🧮 Как считается годовая отметка</h2>
+      </div>
+      <div class="howto">
+        Годовая отметка вычисляется как среднее арифметическое отметок за все завершённые четверти:
+        <div class="formula-box">
+          <b>Годовая отметка</b> = ( I четв. + II четв. + III четв. + IV четв. ) <b>÷</b> Количество четвертей
+        </div>
+        <div class="example">
+          <b>Пример.</b> Четвертные отметки: <code>7</code>, <code>7</code>, <code>8</code>, <code>8</code>:<br>
+          <code>(7 + 7 + 8 + 8) ÷ 4 = 30 ÷ 4 = 7,5</code> → годовая отметка округляется в пользу ученика: <b>8</b>.
+        </div>
+        <ul>
+          <li>Отметки можно выбрать вручную из списка (1–10) или нажать <b>«⚡ Заполнить из четвертей»</b> для автоматического расчета.</li>
+          <li>В столбце «Средний» показан точный средний балл за четверти.</li>
+          <li>В столбце «Годовая» отображается итоговая годовая отметка с математическим округлением.</li>
+        </ul>
+      </div>
+    </section>
+  </section>
+
+  <!-- 4. ТАБ: НАСТРОЙКИ ДЕНЕЖНОЙ МОТИВАЦИИ -->
+  <section class="tab-panel" id="settingsPanel" aria-label="Настройки денежной мотивации">
+    <section class="card">
+      <div class="period-bar">
+        <div class="period-title"><b>Денежная мотивация</b>Настрой начисления за отметки и вычеты за замечания</div>
+        <label class="money-toggle" for="moneyEnabled">
+          <input type="checkbox" id="moneyEnabled">
+          <span class="money-switch" aria-hidden="true"></span>
+          <span>Функция включена</span>
+        </label>
+      </div>
+      <div class="settings-content">
+        <div class="settings-callout">Укажи сумму отдельно для каждой отметки по 10-балльной шкале. Положительная сумма начисляется, отрицательная вычитается, 0 — без изменения. Настройки можно изменить в любой момент.</div>
+        <div class="settings-config-grid">
+          <label class="setting-field">Валюта
+            <select id="moneyCurrency">
+              <option value="BYN">BYN — белорусский рубль</option>
+              <option value="RUB">RUB — российский рубль</option>
+              <option value="USD">USD — доллар США</option>
+              <option value="EUR">EUR — евро</option>
+            </select>
+          </label>
+          <label class="setting-field">Вычет за одно замечание
+            <input type="number" id="remarkFine" min="0" step="0.01" inputmode="decimal">
+          </label>
+        </div>
+        <div class="settings-section-title">Сумма за каждую отметку</div>
+        <div class="settings-section-hint">Можно задать бонус или штраф для любой отметки.</div>
+        <div class="money-rate-grid" id="moneyRateRows"></div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Куда отправлять отчёт</h2></div>
+      <div class="settings-content">
+        <div class="report-settings-note"><b>Системное меню «Поделиться».</b> Нажми «Отправить отчёт» на вкладке «Неделя», затем выбери Telegram, Viber или почтовое приложение и получателя. Список приложений зависит от устройства; выбор адресата подтверждается в системном меню. Если браузер не умеет передавать PDF напрямую, приложение скачает файл для ручной отправки.</div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Установка как приложение</h2></div>
+      <div class="settings-content">
+        <div class="report-settings-note">На поддерживаемых устройствах кнопка «⇩ Установить» появится в шапке. На iPhone и iPad в Safari открой меню «Поделиться» и выбери «На экран Домой». После первого открытия с интернетом приложение сможет запускаться без сети; отметки хранятся локально на этом устройстве.</div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Как считается недельная выплата</h2></div>
+      <div class="howto">
+        В конце выбранной недели приложение складывает суммы за все отметки и вычитает штрафы за замечания:
+        <div class="formula-box"><b>Выплата</b> = сумма за отметки − (вычет за замечание × количество замечаний)</div>
+        <ul>
+          <li>Каждая отметка за выбранную неделю учитывается отдельно; отметки продолжают добавляться в итоги четверти.</li>
+          <li>Сумму для каждой отметки и вычет за замечание можно настроить выше.</li>
+          <li>Приложение рассчитывает сумму к выплате, но не выполняет денежные переводы.</li>
+        </ul>
+      </div>
+    </section>
+  </section>
+
+  <footer>Мои Отметки · личный журнал успеваемости</footer>
+</main>
+
+<!-- Навигация: 1. Неделя, 2. Четверть, 3. Год, 4. Настройки -->
+<nav class="bottom-nav" aria-label="Навигация по приложению">
+  <button class="nav-btn active" data-tab="week"><span class="nav-icon">✏️</span><span>Неделя</span></button>
+  <button class="nav-btn" data-tab="quarter"><span class="nav-icon">📚</span><span>Четверть</span></button>
+  <button class="nav-btn" data-tab="year"><span class="nav-icon">🏆</span><span>Год</span></button>
+  <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span>Настройки</span></button>
+</nav>
+
+<script>
+(function(){
+  "use strict";
+  var KEY="marks8_v3", OLD_KEY="marks8_v2", VERY_OLD_KEY="marks8_v1", DEFAULT_CLASS=8;
+  var DEFAULT_NAMES=["Алгебра","Геометрия","Физика","Химия","Биология","Русский язык","Белорусский язык","Английский язык","История Беларуси","География","Информатика"];
+  var SAMPLE=[[7,8,6,9],[6,7,7],[8,7,9,8],[6,5,7],[9,8],[7,8,7,6,8],[8,7,9],[9,9,8],[6,7],[8,7,8],[9,10,9]];
+  var DEFAULT_YEAR_MARKS=[
+    {1:8,2:8,3:7,4:8},
+    {1:7,2:7,3:7,4:8},
+    {1:8,2:8,3:9,4:8},
+    {1:6,2:6,3:7,4:7},
+    {1:9,2:8,3:9,4:9},
+    {1:7,2:8,3:7,4:8},
+    {1:8,2:8,3:8,4:9},
+    {1:9,2:9,3:9,4:9},
+    {1:7,2:7,3:6,4:7},
+    {1:8,2:8,3:8,4:8},
+    {1:9,2:10,3:9,4:10}
+  ];
+  var DEFAULT_MONEY_RATES={1:-1,2:-0.75,3:-0.5,4:-0.25,5:0,6:0.25,7:0.5,8:0.75,9:1,10:1.5};
+  function defaultMoney(){
+    return {enabled:true,currency:"BYN",remarkFine:0.5,rates:Object.assign({},DEFAULT_MONEY_RATES)};
+  }
+  var nextMarkId=1;
+  var nextRemarkId=1;
+  var state=load();
+  var MONTHS_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var MONTHS_SHORT=["янв.","фев.","мар.","апр.","мая","июн.","июл.","авг.","сен.","окт.","нояб.","дек."];
+  var MONTHS_TITLE=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  var calendarMonth=parseDateKey(state.weekStart)||new Date();
+
+  function addDays(date,count){var d=new Date(date.getFullYear(),date.getMonth(),date.getDate());d.setDate(d.getDate()+count);return d}
+  function mondayOf(date){var d=new Date(date.getFullYear(),date.getMonth(),date.getDate());var offset=(d.getDay()+6)%7;d.setDate(d.getDate()-offset);return d}
+  function dateKey(date){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0")}
+  function parseDateKey(key){var p=String(key||"").split("-").map(Number);if(p.length!==3||!p[0]||!p[1]||!p[2])return null;var d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2]?d:null}
+  function validDateKey(key){return !!parseDateKey(key)}
+
+  function fresh(){
+    var thisMonday=mondayOf(new Date());
+    return {
+      nextId:DEFAULT_NAMES.length+1,
+      classNumber:DEFAULT_CLASS,
+      quarter:1,
+      weekQuarter:1,
+      weekStart:dateKey(thisMonday),
+      money:defaultMoney(),
+      remarks:[],
+      subjects:DEFAULT_NAMES.map(function(n,i){
+        return {
+          id:i+1,
+          name:n,
+          marks:SAMPLE[i].map(function(v,j){
+            return {id:nextMarkId++,value:v,quarter:1,weekStart:dateKey(addDays(thisMonday,-(j%4)*7))};
+          }),
+          quarterMarks:Object.assign({},DEFAULT_YEAR_MARKS[i]||{1:null,2:null,3:null,4:null})
+        };
+      })
+    };
+  }
+
+  function load(){
+    try{
+      var raw=localStorage.getItem(KEY);
+      if(raw){var d=JSON.parse(raw);if(d&&Array.isArray(d.subjects)){normalize(d);return d;}}
+      var old=localStorage.getItem(OLD_KEY);
+      if(old){var o=JSON.parse(old);if(o&&Array.isArray(o.subjects)){normalize(o);return o;}}
+      var vold=localStorage.getItem(VERY_OLD_KEY);
+      if(vold){
+        var vo=JSON.parse(vold);
+        if(vo&&Array.isArray(vo.subjects)){
+          var anchor=mondayOf(new Date());
+          var d2={
+            nextId:vo.nextId||20,classNumber:vo.classNumber||8,quarter:1,weekQuarter:1,weekStart:dateKey(anchor),
+            subjects:vo.subjects.map(function(s,i){
+              return {
+                id:s.id||(i+1),name:s.name,
+                marks:(s.grades||[]).map(function(v,j){return {id:nextMarkId++,value:v,quarter:1,weekStart:dateKey(addDays(anchor,-(j%4)*7))};}),
+                quarterMarks:Object.assign({},DEFAULT_YEAR_MARKS[i]||{1:null,2:null,3:null,4:null})
+              };
+            })
+          };
+          normalize(d2);return d2;
+        }
+      }
+    }catch(e){}
+    return fresh();
+  }
+
+  function normalize(d){
+    var classNumber=Number(d.classNumber);
+    d.classNumber=Number.isInteger(classNumber)&&classNumber>=1&&classNumber<=11?classNumber:DEFAULT_CLASS;
+    var quarter=Number(d.quarter);
+    d.quarter=Number.isInteger(quarter)&&quarter>=1&&quarter<=4?quarter:1;
+    var weekQuarter=Number(d.weekQuarter);
+    d.weekQuarter=Number.isInteger(weekQuarter)&&weekQuarter>=1&&weekQuarter<=4?weekQuarter:d.quarter;
+    var legacyWeek=Number(d.week);
+    if(!Number.isInteger(legacyWeek)||legacyWeek<1||legacyWeek>53)legacyWeek=1;
+    var anchor=validDateKey(d.weekStart)?mondayOf(parseDateKey(d.weekStart)):addDays(mondayOf(new Date()),-(legacyWeek-1)*7);
+    d.weekStart=dateKey(anchor);
+
+    d.subjects=Array.isArray(d.subjects)?d.subjects.filter(function(s){return s&&typeof s==='object';}):[];
+    var usedSubjectIds={},usedMarkIds={},maxSubjectId=0;
+    d.subjects.forEach(function(s,idx){
+      var id=Number(s.id);
+      if(!Number.isSafeInteger(id)||id<1||usedSubjectIds[id])id=maxSubjectId+1;
+      s.id=id;usedSubjectIds[id]=true;maxSubjectId=Math.max(maxSubjectId,id);
+      s.name=String(s.name||'Предмет').trim().slice(0,40)||'Предмет';
+      s.marks=Array.isArray(s.marks)?s.marks.filter(function(m){return m&&typeof m==='object';}):[];
+      s.marks=s.marks.filter(function(m){
+        var value=Number(m.value);
+        if(!Number.isInteger(value)||value<1||value>10)return false;
+        m.value=value;
+        var markId=Number(m.id);
+        if(!Number.isSafeInteger(markId)||markId<1||usedMarkIds[markId])markId=nextMarkId++;
+        m.id=markId;usedMarkIds[markId]=true;nextMarkId=Math.max(nextMarkId,markId+1);
+        var markQuarter=Number(m.quarter);
+        m.quarter=Number.isInteger(markQuarter)&&markQuarter>=1&&markQuarter<=4?markQuarter:1;
+        if(validDateKey(m.weekStart))m.weekStart=dateKey(mondayOf(parseDateKey(m.weekStart)));
+        else{
+          var oldWeek=Number(m.week);
+          if(!Number.isInteger(oldWeek)||oldWeek<1||oldWeek>53)oldWeek=legacyWeek;
+          m.weekStart=dateKey(addDays(anchor,(oldWeek-1)*7));
+        }
+        delete m.week;
+        return true;
+      });
+      if(!s.quarterMarks||typeof s.quarterMarks!=='object'||Array.isArray(s.quarterMarks)){
+        s.quarterMarks=DEFAULT_YEAR_MARKS[idx]?Object.assign({},DEFAULT_YEAR_MARKS[idx]):{1:null,2:null,3:null,4:null};
+      }
+      for(var q=1;q<=4;q++){
+        var quarterMark=s.quarterMarks[q];
+        if(quarterMark===undefined||quarterMark===null||quarterMark==='')s.quarterMarks[q]=null;
+        else{
+          var num=Number(quarterMark);
+          s.quarterMarks[q]=Number.isInteger(num)&&num>=1&&num<=10?num:null;
+        }
+      }
+    });
+    var storedNextId=Number(d.nextId);
+    d.nextId=Number.isSafeInteger(storedNextId)&&storedNextId>0?Math.max(storedNextId,maxSubjectId+1):maxSubjectId+1;
+
+    var money=d.money&&typeof d.money==='object'?d.money:{};
+    var rates=money.rates&&typeof money.rates==='object'?money.rates:{};
+    var currencies=['BYN','RUB','USD','EUR'];
+    var fine=Number(money.remarkFine);
+    d.money={
+      enabled:!(money.enabled===false||money.enabled===0||money.enabled==='false'),
+      currency:currencies.indexOf(money.currency)>=0?money.currency:'BYN',
+      remarkFine:isFinite(fine)&&fine>=0?roundMoney(fine):0.5,
+      rates:{}
+    };
+    for(var g=1;g<=10;g++){
+      var rate=Number(rates[g]);
+      d.money.rates[g]=rates[g]!==null&&rates[g]!==''&&isFinite(rate)?roundMoney(rate):DEFAULT_MONEY_RATES[g];
+    }
+
+    d.remarks=Array.isArray(d.remarks)?d.remarks.filter(function(r){return r&&typeof r==='object';}):[];
+    var usedRemarkIds={};
+    d.remarks.forEach(function(r){
+      var remarkId=Number(r.id);
+      if(!Number.isSafeInteger(remarkId)||remarkId<1||usedRemarkIds[remarkId])remarkId=nextRemarkId++;
+      r.id=remarkId;usedRemarkIds[remarkId]=true;nextRemarkId=Math.max(nextRemarkId,remarkId+1);
+      var remarkQuarter=Number(r.quarter);
+      r.quarter=Number.isInteger(remarkQuarter)&&remarkQuarter>=1&&remarkQuarter<=4?remarkQuarter:d.weekQuarter;
+      r.weekStart=validDateKey(r.weekStart)?dateKey(mondayOf(parseDateKey(r.weekStart))):d.weekStart;
+      r.text=String(r.text||'Замечание').trim().slice(0,100)||'Замечание';
+    });
+  }
+
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  function avg(a){return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null}
+  function fmt(n){if(n===null)return "—";var s=n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');return s.replace('.',',')}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function color(v){return v>=8?'#1f9d55':v>=5?'#b7791f':v>=3?'#c05621':'#c53030'}
+  function gradeClass(v){return v>=8?'g-hi':v>=5?'g-mid':v>=3?'g-low':'g-bad'}
+  function barColor(v){return v>=8?'linear-gradient(90deg,#34c77b,#1f9d55)':v>=5?'linear-gradient(90deg,#f0c04a,#d69e2e)':v>=3?'linear-gradient(90deg,#f09a5a,#dd6b20)':'linear-gradient(90deg,#f08080,#e53e3e)'}
+  function marksFor(s,q,w){return s.marks.filter(function(m){return m.quarter===q&&(w==null||m.weekStart===w)})}
+  function remarksFor(q,w){return state.remarks.filter(function(r){return r.quarter===q&&r.weekStart===w})}
+  function roundMoney(n){return Math.round((Number(n)||0)*100)/100}
+  function moneyText(n){var v=roundMoney(n),sign=v>0?'+':v<0?'−':'';return sign+Math.abs(v).toFixed(2).replace('.',',')+' '+state.money.currency}
+  function moneyTone(n){return n>0?'positive':n<0?'negative':'zero'}
+  function moneyColor(n){return n>0?'#1f9d55':n<0?'#c53030':'#6b7194'}
+  function setMoneyValue(id,n){var el=document.getElementById(id);el.textContent=moneyText(n);el.classList.remove('positive','negative','zero');el.classList.add(moneyTone(n))}
+  function findSubject(id){return state.subjects.find(function(s){return s.id===id})}
+  function quarterOptions(selected){var h='';for(var i=1;i<=4;i++)h+='<option value="'+i+'"'+(i===selected?' selected':'')+'>'+i+' четверть</option>';return h}
+
+  function weekRange(start,short){
+    if(!start)start=new Date();
+    var end=addDays(start,6),sameMonth=start.getMonth()===end.getMonth()&&start.getFullYear()===end.getFullYear(),sameYear=start.getFullYear()===end.getFullYear();
+    if(sameMonth)return start.getDate()+'–'+end.getDate()+' '+(short?MONTHS_SHORT[end.getMonth()]:MONTHS_GEN[end.getMonth()])+' '+end.getFullYear();
+    if(sameYear)return start.getDate()+' '+(short?MONTHS_SHORT[start.getMonth()]:MONTHS_GEN[start.getMonth()])+' – '+end.getDate()+' '+(short?MONTHS_SHORT[end.getMonth()]:MONTHS_GEN[end.getMonth()])+' '+end.getFullYear();
+    return start.getDate()+' '+(short?MONTHS_SHORT[start.getMonth()]:MONTHS_GEN[start.getMonth()])+' '+start.getFullYear()+' – '+end.getDate()+' '+(short?MONTHS_SHORT[end.getMonth()]:MONTHS_GEN[end.getMonth()])+' '+end.getFullYear();
+  }
+
+  function renderCalendar(){
+    var first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1),last=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0);
+    document.getElementById('calendarMonthLabel').textContent=MONTHS_TITLE[calendarMonth.getMonth()]+' '+calendarMonth.getFullYear();
+    var cursor=mondayOf(first),lastDay=addDays(mondayOf(last),6),html='';
+    while(cursor<=lastDay){
+      var rowStart=new Date(cursor.getFullYear(),cursor.getMonth(),cursor.getDate()),key=dateKey(rowStart),selected=key===state.weekStart,days='';
+      for(var i=0;i<7;i++){
+        var day=addDays(rowStart,i),other=day.getMonth()!==calendarMonth.getMonth();
+        days+='<span class="calendar-day'+(other?' other-month':'')+'">'+day.getDate()+'</span>';
+      }
+      var label=weekRange(rowStart,false);
+      html+='<button type="button" class="calendar-week'+(selected?' selected':'')+'" data-calendar="select" data-week-start="'+key+'" aria-label="Выбрать неделю '+esc(label)+'" aria-pressed="'+(selected?'true':'false')+'">'+days+'</button>';
+      cursor=addDays(cursor,7);
+    }
+    document.getElementById('calendarWeeks').innerHTML=html;
+    document.getElementById('calendarFoot').textContent='Выбери неделю целиком · сейчас: '+weekRange(parseDateKey(state.weekStart),false);
+  }
+
+  /* ---- RENDER WEEK ---- */
+  function renderWeek(){
+    var q=state.weekQuarter,w=state.weekStart,rows='',selectedDate=parseDateKey(w);
+    document.getElementById('weekHeading').textContent='Отметки · '+weekRange(selectedDate,false)+', '+q+' четверть';
+    document.getElementById('weekPickerLabel').textContent=weekRange(selectedDate,true);
+    state.subjects.forEach(function(s){
+      var ms=marksFor(s,q,w),vals=ms.map(function(m){return m.value}),a=avg(vals);
+      var chips=ms.length?ms.map(function(m){return '<span class="chip '+gradeClass(m.value)+'">'+m.value+'<button data-act="del-mark" data-sid="'+s.id+'" data-mid="'+m.id+'" title="Удалить">×</button></span>'}).join(''):'<span class="empty-note">нет отметок</span>';
+      var quick='';for(var g=1;g<=10;g++)quick+='<button data-act="add-mark" data-id="'+s.id+'" data-g="'+g+'" title="Поставить '+g+'">'+g+'</button>';
+      rows+='<div class="trow"><div class="cell-name"><input class="subj-input" data-act="rename" data-id="'+s.id+'" value="'+esc(s.name)+'" maxlength="40" aria-label="Название предмета"></div><div class="cell-grades grades-cell"><div class="chips">'+chips+'</div><div class="quick">'+quick+'</div></div><div class="cell-avg avg-cell"><div class="avg-num '+(a===null?'none':'')+'"'+(a!==null?' style="color:'+color(a)+'"':'')+'>'+fmt(a)+'</div><div class="avg-formula">'+(vals.length?vals.length+' отметок':'—')+'</div></div></div>';
+    });
+    document.getElementById('weekRows').innerHTML=rows||'<div style="padding:24px;color:var(--muted)">Сначала добавь предмет на вкладке «Четверть» или «Год».</div>';
+  }
+
+  function renderWeeklyMoney(){
+    var enabled=!!state.money.enabled;
+    var content=document.getElementById('moneyContent');
+    var disabledNote=document.getElementById('moneyDisabledNote');
+    var payoutEl=document.getElementById('weekPayout');
+    content.hidden=!enabled;
+    disabledNote.hidden=enabled;
+    var selectedDate=parseDateKey(state.weekStart);
+    document.getElementById('moneyWeekCaption').textContent=weekRange(selectedDate,true)+' · '+state.weekQuarter+' четверть';
+    if(!enabled){
+      payoutEl.textContent='—';
+      payoutEl.classList.remove('positive','negative');
+      payoutEl.classList.add('zero');
+      return;
+    }
+    var gradeTotal=0,markCount=0;
+    state.subjects.forEach(function(s){
+      marksFor(s,state.weekQuarter,state.weekStart).forEach(function(m){
+        gradeTotal+=Number(state.money.rates[m.value])||0;
+        markCount++;
+      });
+    });
+    gradeTotal=roundMoney(gradeTotal);
+    var weekRemarks=remarksFor(state.weekQuarter,state.weekStart);
+    var remarkPenalty=roundMoney(weekRemarks.length*state.money.remarkFine);
+    var total=roundMoney(gradeTotal-remarkPenalty);
+    setMoneyValue('weekPayout',total);
+    setMoneyValue('weekGradeMoney',gradeTotal);
+    setMoneyValue('weekRemarkMoney',-remarkPenalty);
+    setMoneyValue('weekTotalMoney',total);
+    document.getElementById('weekRemarkCount').textContent=weekRemarks.length;
+    document.getElementById('moneyWeekCaption').textContent=weekRange(selectedDate,true)+' · '+state.weekQuarter+' четверть · отметок: '+markCount;
+    document.getElementById('weekRemarks').innerHTML=weekRemarks.length?weekRemarks.map(function(r){
+      return '<div class="remark-item"><span>'+esc(r.text)+'</span><button class="remark-delete" data-act="del-remark" data-rid="'+r.id+'" title="Удалить замечание" aria-label="Удалить замечание">×</button></div>';
+    }).join(''):'<div class="empty-note">За эту неделю замечаний нет.</div>';
+  }
+
+  /* ---- RENDER QUARTER ---- */
+  function renderQuarter(){
+    var q=state.quarter,all=[],rows='';
+    state.subjects.forEach(function(s){
+      var ms=marksFor(s,q),vals=ms.map(function(m){return m.value}),a=avg(vals),sum=vals.reduce(function(x,y){return x+y},0),pred=a===null?null:Math.max(1,Math.min(10,Math.round(a)));all=all.concat(vals);
+      var chips=ms.length?ms.map(function(m){return '<span class="chip '+gradeClass(m.value)+'">'+m.value+'<button data-act="del-mark" data-sid="'+s.id+'" data-mid="'+m.id+'" title="Удалить">×</button></span>'}).join(''):'<span class="empty-note">пока нет отметок</span>';
+      rows+='<div class="trow"><div class="cell-name"><input class="subj-input" data-act="rename" data-id="'+s.id+'" value="'+esc(s.name)+'" maxlength="40" aria-label="Название предмета"></div><div class="cell-grades grades-cell"><div class="chips">'+chips+'</div></div><div class="cell-avg avg-cell"><div class="avg-num '+(a===null?'none':'')+'"'+(a!==null?' style="color:'+color(a)+'"':'')+'>'+fmt(a)+'</div><div class="avg-formula">'+(a===null?'—':sum+' ÷ '+vals.length)+'</div></div><div class="cell-predict" style="text-align:center"><span class="prediction '+(pred===null?'none':gradeClass(pred))+'" title="Возможная отметка за четверть">'+(pred===null?'—':pred)+'</span></div><div class="cell-del"><button class="del-subj" data-act="del-subject" data-id="'+s.id+'" title="Удалить предмет">🗑</button></div></div>';
+    });
+    document.getElementById('quarterRows').innerHTML=rows||'<div style="padding:24px;color:var(--muted)">Добавь первый предмет ниже.</div>';
+    var aAll=avg(all),sumAll=all.reduce(function(x,y){return x+y},0),ov=document.getElementById('overallAvg');ov.textContent=fmt(aAll);ov.style.color=aAll===null?'#b9bdd6':color(aAll);
+    document.getElementById('overallFormula').textContent=aAll===null?'нет отметок':sumAll+' ÷ '+all.length+' = '+fmt(aAll);document.getElementById('totalMarks').textContent=all.length;document.getElementById('totalSubjects').textContent='предметов: '+state.subjects.length;
+    var av=state.subjects.map(function(s){var v=avg(marksFor(s,q).map(function(m){return m.value}));return {name:s.name,a:v}}).filter(function(x){return x.a!==null}).sort(function(x,y){return y.a-x.a});
+    setSummary('best',av.length?av[0]:null);setSummary('worst',av.length?av[av.length-1]:null);
+    document.getElementById('chart').innerHTML=av.length?av.map(function(x){return '<div class="bar-row"><div class="bar-name">'+esc(x.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+(x.a*10)+'%;background:'+barColor(x.a)+'"></div></div><div class="bar-val">'+fmt(x.a)+'</div></div>'}).join(''):'<div class="chart-empty">Добавь отметки на вкладке «Неделя».</div>';
+  }
+  function setSummary(type,x){document.getElementById(type+'Subject').textContent=x?x.name:'—';document.getElementById(type+'Avg').textContent=x?'средний балл '+fmt(x.a):' '}
+
+  /* ---- RENDER YEAR ---- */
+  function renderYear(){
+    var rows='',allFinals=[],allAvgs=[];
+    state.subjects.forEach(function(s){
+      s.quarterMarks=s.quarterMarks||{};
+      var qVals=[];
+      var pillsHtml='';
+      for(var q=1;q<=4;q++){
+        var val=s.quarterMarks[q];
+        if(val!==undefined&&val!==null&&val!==''){
+          val=+val;
+        }else{
+          val=null;
+        }
+        if(val!==null) qVals.push(val);
+
+        var optHtml='<option value="">—</option>';
+        for(var g=10;g>=1;g--){
+          optHtml+='<option value="'+g+'"'+(val===g?' selected':'')+'>'+g+'</option>';
+        }
+        var cls=val!==null?gradeClass(val):'';
+        var roman=q===1?'I':q===2?'II':q===3?'III':'IV';
+        pillsHtml+='<div class="q-pill-item"><span class="q-label">'+roman+' четв.</span><select class="q-select '+cls+'" data-act="set-q-mark" data-sid="'+s.id+'" data-q="'+q+'" aria-label="'+esc(s.name)+', '+roman+' четверть">'+optHtml+'</select></div>';
+      }
+
+      var yAvg=avg(qVals);
+      var yFinal=yAvg===null?null:Math.max(1,Math.min(10,Math.round(yAvg)));
+      if(yFinal!==null) allFinals.push(yFinal);
+      if(yAvg!==null) allAvgs.push({name:s.name,a:yAvg,final:yFinal});
+
+      var sum=qVals.reduce(function(a,b){return a+b},0);
+      var formulaText=qVals.length?sum+' ÷ '+qVals.length+' = '+fmt(yAvg):'нет четвертных';
+
+      rows+=
+        '<div class="trow">'+
+          '<div class="cell-name"><input class="subj-input" data-act="rename" data-id="'+s.id+'" value="'+esc(s.name)+'" maxlength="40" aria-label="Название предмета"></div>'+
+          '<div class="cell-quarters q-pills">'+pillsHtml+'</div>'+
+          '<div class="cell-formula mobile-only">'+formulaText+'</div>'+
+          '<div class="cell-avg avg-cell">'+
+            '<div class="avg-num '+(yAvg===null?'none':'')+'"'+(yAvg!==null?' style="color:'+color(yAvg)+'"':'')+'>'+fmt(yAvg)+'</div>'+
+            '<div class="avg-formula">'+formulaText+'</div>'+
+          '</div>'+
+          '<div class="cell-final" style="text-align:center">'+
+            '<span class="prediction '+(yFinal===null?'none':gradeClass(yFinal))+'" title="Итоговая годовая отметка">'+(yFinal===null?'—':yFinal)+'</span>'+
+          '</div>'+
+        '</div>';
+    });
+
+    document.getElementById('yearRows').innerHTML=rows||'<div style="padding:24px;color:var(--muted)">Сначала добавь предмет.</div>';
+
+    var overallFinalAvg=avg(allFinals);
+    var sumFinals=allFinals.reduce(function(a,b){return a+b},0);
+    var ovEl=document.getElementById('yearOverallAvg');
+    ovEl.textContent=fmt(overallFinalAvg);
+    ovEl.style.color=overallFinalAvg===null?'#b9bdd6':color(overallFinalAvg);
+    document.getElementById('yearOverallFormula').textContent=allFinals.length?sumFinals+' ÷ '+allFinals.length+' = '+fmt(overallFinalAvg):'нет отметок';
+    document.getElementById('yearTotalCount').textContent=allFinals.length+' из '+state.subjects.length;
+    document.getElementById('yearTotalSubjects').textContent='предметов: '+state.subjects.length;
+
+    allAvgs.sort(function(p,q){return q.a-p.a});
+    if(allAvgs.length){
+      document.getElementById('yearBestSubject').textContent=allAvgs[0].name;
+      document.getElementById('yearBestAvg').textContent='годовая: '+allAvgs[0].final+' (ср. '+fmt(allAvgs[0].a)+')';
+      document.getElementById('yearWorstSubject').textContent=allAvgs[allAvgs.length-1].name;
+      document.getElementById('yearWorstAvg').textContent='годовая: '+allAvgs[allAvgs.length-1].final+' (ср. '+fmt(allAvgs[allAvgs.length-1].a)+')';
+    }else{
+      document.getElementById('yearBestSubject').textContent='—';
+      document.getElementById('yearBestAvg').innerHTML='&nbsp;';
+      document.getElementById('yearWorstSubject').textContent='—';
+      document.getElementById('yearWorstAvg').innerHTML='&nbsp;';
+    }
+
+    var ch='';
+    if(allAvgs.length){
+      allAvgs.forEach(function(x){
+        ch+='<div class="bar-row"><div class="bar-name" title="'+esc(x.name)+'">'+esc(x.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+(x.a*10)+'%;background:'+barColor(x.a)+'"></div></div><div class="bar-val">'+fmt(x.a)+'</div></div>';
+      });
+    }else{
+      ch='<div class="chart-empty">Выстави четвертные отметки выше — и здесь появится рейтинг.</div>';
+    }
+    document.getElementById('yearChart').innerHTML=ch;
+  }
+
+  function renderMoneySettings(){
+    document.getElementById('moneyEnabled').checked=!!state.money.enabled;
+    document.getElementById('moneyCurrency').value=state.money.currency;
+    document.getElementById('remarkFine').value=roundMoney(state.money.remarkFine).toFixed(2);
+    var html='';
+    for(var g=1;g<=10;g++){
+      var value=roundMoney(state.money.rates[g]);
+      html+='<label class="money-rate-row"><span class="money-rate-grade"><span class="money-rate-badge">'+g+'</span>За отметку '+g+'</span><span class="money-rate-input-wrap"><input class="money-rate-input" type="number" step="0.01" inputmode="decimal" data-act="set-money-rate" data-grade="'+g+'" value="'+value.toFixed(2)+'" aria-label="Сумма за отметку '+g+'"><span class="money-rate-currency">'+esc(state.money.currency)+'</span></span></label>';
+    }
+    document.getElementById('moneyRateRows').innerHTML=html;
+  }
+
+  function collectWeeklyReportData(){
+    var q=state.weekQuarter,w=state.weekStart;
+    var rows=state.subjects.map(function(s){
+      var values=marksFor(s,q,w).map(function(m){return m.value});
+      var earned=values.reduce(function(sum,g){return sum+(Number(state.money.rates[g])||0)},0);
+      return {name:s.name,values:values,average:avg(values),earned:roundMoney(earned)};
+    });
+    var remarks=remarksFor(q,w).slice();
+    var gradeTotal=rows.reduce(function(sum,row){return sum+row.earned},0);
+    var deduction=roundMoney(remarks.length*state.money.remarkFine);
+    if(!state.money.enabled){gradeTotal=0;deduction=0;}
+    return {
+      weekStart:w,quarter:q,rows:rows,remarks:remarks,
+      markCount:rows.reduce(function(sum,row){return sum+row.values.length},0),
+      moneyEnabled:!!state.money.enabled,
+      gradeTotal:roundMoney(gradeTotal),deduction:deduction,
+      total:roundMoney(gradeTotal-deduction)
+    };
+  }
+
+  function createReportCanvasPages(data){
+    var W=1240,H=1754,M=76,INNER=W-M*2,BOTTOM=H-94;
+    var pages=[],canvas=null,ctx=null,y=0,pageNo=0;
+    var ink='#1e2235',muted='#6b7194',line='#e5e8f4',accent='#5b5bd6';
+    var period=weekRange(parseDateKey(data.weekStart),false)+' · '+data.quarter+' четверть · '+state.classNumber+' класс';
+
+    function pageStart(){
+      pageNo++;
+      canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+      ctx=canvas.getContext('2d');
+      if(!ctx)throw new Error('Не удалось подготовить страницу PDF');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=accent;ctx.fillRect(0,0,W,16);
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      if(pageNo===1){
+        ctx.fillStyle=accent;ctx.font='bold 28px Arial, sans-serif';ctx.fillText('Мои Отметки',M,70);
+        ctx.fillStyle=ink;ctx.font='bold 50px Arial, sans-serif';ctx.fillText('Отчёт за неделю',M,128);
+        ctx.fillStyle=muted;ctx.font='25px Arial, sans-serif';ctx.fillText(weekRange(parseDateKey(data.weekStart),false),M,174);
+        ctx.fillText(data.quarter+' четверть · '+state.classNumber+' класс',M,211);
+        var gap=14,cardW=(INNER-gap*2)/3,cardY=232,cardH=106;
+        var cards=[
+          {label:'Отметок',value:String(data.markCount),color:ink},
+          {label:'Замечаний',value:String(data.remarks.length),color:data.remarks.length?'#c05621':'#1f9d55'},
+          {label:'К выплате',value:data.moneyEnabled?moneyText(data.total):'выключено',color:data.moneyEnabled?moneyColor(data.total):muted}
+        ];
+        cards.forEach(function(card,i){
+          var x=M+i*(cardW+gap);
+          ctx.fillStyle='#f7f7fc';ctx.fillRect(x,cardY,cardW,cardH);
+          ctx.strokeStyle=line;ctx.lineWidth=2;ctx.strokeRect(x,cardY,cardW,cardH);
+          ctx.fillStyle=muted;ctx.font='20px Arial, sans-serif';ctx.fillText(card.label,x+18,cardY+34);
+          ctx.fillStyle=card.color;ctx.font='bold 29px Arial, sans-serif';ctx.fillText(card.value,x+18,cardY+76,cardW-34);
+        });
+        y=cardY+cardH+34;
+      }else{
+        ctx.fillStyle=ink;ctx.font='bold 32px Arial, sans-serif';ctx.fillText('Отчёт за неделю · продолжение',M,82);
+        ctx.fillStyle=muted;ctx.font='21px Arial, sans-serif';ctx.fillText(period,M,121);
+        y=158;
+      }
+      ctx.strokeStyle=line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(M,H-68);ctx.lineTo(W-M,H-68);ctx.stroke();
+      ctx.fillStyle=muted;ctx.font='17px Arial, sans-serif';ctx.fillText('Сформировано в приложении «Мои Отметки»',M,H-38);
+      ctx.textAlign='right';ctx.fillText(String(pageNo),W-M,H-38);ctx.textAlign='left';
+      pages.push(canvas);
+    }
+
+    function wrapLines(text,font,maxWidth){
+      ctx.font=font;
+      var words=String(text).split(/\s+/),lines=[],current='';
+      words.forEach(function(word){
+        var test=current?current+' '+word:word;
+        if(current&&ctx.measureText(test).width>maxWidth){lines.push(current);current=word;}
+        else current=test;
+      });
+      if(current)lines.push(current);
+      return lines.length?lines:[''];
+    }
+
+    function drawWrapped(text,x,baseline,font,fill,maxWidth,lineHeight){
+      var lines=wrapLines(text,font,maxWidth);
+      ctx.font=font;ctx.fillStyle=fill;ctx.textAlign='left';
+      lines.forEach(function(part,i){ctx.fillText(part,x,baseline+i*lineHeight,maxWidth);});
+      return lines.length*lineHeight;
+    }
+
+    function sectionTitle(text){
+      if(y+52>BOTTOM)pageStart();
+      ctx.fillStyle=ink;ctx.font='bold 31px Arial, sans-serif';ctx.fillText(text,M,y+32);
+      y+=53;
+    }
+
+    function drawTableHeader(){
+      var widths=[230,470,160,228],labels=['Предмет','Отметки','Среднее','За отметки'];
+      ctx.fillStyle=accent;ctx.fillRect(M,y,INNER,56);
+      ctx.font='bold 20px Arial, sans-serif';ctx.fillStyle='#ffffff';
+      var x=M;
+      labels.forEach(function(label,i){ctx.fillText(label,x+12,y+36,widths[i]-20);x+=widths[i];});
+      y+=56;
+    }
+
+    function drawTableRow(row,index){
+      var widths=[230,470,160,228],font='22px Arial, sans-serif';
+      var nameLines=wrapLines(row.name,font,widths[0]-24);
+      var gradeText=row.values.length?row.values.join(', '):'—';
+      var gradeLines=wrapLines(gradeText,font,widths[1]-24);
+      var rowHeight=Math.max(62,Math.max(nameLines.length,gradeLines.length)*30+20);
+      if(y+rowHeight>BOTTOM){
+        pageStart();sectionTitle('Отметки по предметам · продолжение');drawTableHeader();
+      }
+      var top=y;
+      ctx.fillStyle=index%2?'#fafaff':'#ffffff';ctx.fillRect(M,top,INNER,rowHeight);
+      ctx.strokeStyle=line;ctx.lineWidth=1;ctx.strokeRect(M,top,INNER,rowHeight);
+      var x=M;
+      for(var i=0;i<widths.length-1;i++){x+=widths[i];ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,top+rowHeight);ctx.stroke();}
+      drawWrapped(row.name,M+12,top+30,font,ink,widths[0]-24,30);
+      drawWrapped(gradeText,M+12,top+30,font,ink,widths[1]-24,30);
+      ctx.font=font;ctx.fillStyle=row.average===null?muted:color(row.average);ctx.fillText(row.average===null?'—':fmt(row.average),M+widths[0]+widths[1]+12,top+38,widths[2]-24);
+      var amount=data.moneyEnabled?moneyText(row.earned):'—';
+      ctx.fillStyle=data.moneyEnabled?moneyColor(row.earned):muted;ctx.fillText(amount,M+widths[0]+widths[1]+widths[2]+12,top+38,widths[3]-24);
+      y+=rowHeight;
+    }
+
+    pageStart();
+    sectionTitle('Отметки по предметам');
+    drawTableHeader();
+    if(data.rows.length){data.rows.forEach(function(row,index){drawTableRow(row,index);});}
+    else{drawWrapped('Предметов пока нет.',M+10,y+30,'22px Arial, sans-serif',muted,INNER-20,30);y+=48;}
+
+    sectionTitle('Замечания в дневнике');
+    if(!data.remarks.length){
+      if(y+42>BOTTOM){pageStart();sectionTitle('Замечания в дневнике · продолжение');}
+      drawWrapped('За выбранную неделю замечаний нет.',M,y+30,'22px Arial, sans-serif',muted,INNER,31);y+=44;
+    }else{
+      data.remarks.forEach(function(r){
+        var text='• '+r.text,font='22px Arial, sans-serif',lines=wrapLines(text,font,INNER-20),height=lines.length*31+10;
+        if(y+height>BOTTOM){pageStart();sectionTitle('Замечания в дневнике · продолжение');}
+        drawWrapped(text,M+4,y+27,font,ink,INNER-20,31);y+=height;
+      });
+    }
+
+    sectionTitle('Денежный итог');
+    if(!data.moneyEnabled){
+      var offText='Денежная мотивация отключена в настройках; выплата за эту неделю не рассчитывалась.';
+      var offLines=wrapLines(offText,'22px Arial, sans-serif',INNER-36),offHeight=offLines.length*32+34;
+      if(y+offHeight>BOTTOM){pageStart();sectionTitle('Денежный итог · продолжение');}
+      ctx.fillStyle='#f7f7fc';ctx.fillRect(M,y,INNER,offHeight);
+      drawWrapped(offText,M+18,y+31,'22px Arial, sans-serif',muted,INNER-36,32);y+=offHeight;
+    }else{
+      var finePerRemark=moneyText(-state.money.remarkFine);
+      var lines=[
+        'Начислено за отметки: '+moneyText(data.gradeTotal),
+        'Вычет за замечания ('+data.remarks.length+' × '+finePerRemark+'): '+moneyText(-data.deduction),
+        'К выплате за неделю: '+moneyText(data.total)
+      ];
+      var boxHeight=lines.length*43+30;
+      if(y+boxHeight+18>BOTTOM){pageStart();sectionTitle('Денежный итог · продолжение');}
+      ctx.fillStyle=data.total>0?'#eaf7ef':data.total<0?'#fff0ed':'#f7f7fc';ctx.fillRect(M,y,INNER,boxHeight);
+      ctx.strokeStyle=line;ctx.lineWidth=1;ctx.strokeRect(M,y,INNER,boxHeight);
+      ctx.font='23px Arial, sans-serif';ctx.fillStyle=data.gradeTotal<0?'#c53030':data.gradeTotal>0?'#1f9d55':ink;ctx.fillText(lines[0],M+18,y+38);
+      ctx.fillStyle=data.deduction?'#c53030':muted;ctx.fillText(lines[1],M+18,y+81);
+      ctx.font='bold 27px Arial, sans-serif';ctx.fillStyle=moneyColor(data.total);ctx.fillText(lines[2],M+18,y+124);
+      y+=boxHeight+16;
+      drawWrapped('Сумма является расчётом приложения и не подтверждает факт выплаты.',M,y+22,'17px Arial, sans-serif',muted,INNER,24);y+=34;
+    }
+    return pages;
+  }
+
+  function asciiPdfBytes(text){var out=new Uint8Array(text.length);for(var i=0;i<text.length;i++)out[i]=text.charCodeAt(i)&255;return out;}
+  function joinByteParts(parts){var size=parts.reduce(function(sum,p){return sum+p.length},0),out=new Uint8Array(size),offset=0;parts.forEach(function(part){out.set(part,offset);offset+=part.length;});return out;}
+  function canvasJpegBytes(canvas){
+    var base64=canvas.toDataURL('image/jpeg',0.9).split(',')[1],binary=atob(base64),out=new Uint8Array(binary.length);
+    for(var i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
+    return out;
+  }
+  function createPdfBlob(canvases){
+    var objectCount=2+canvases.length*3,objects=new Array(objectCount+1),pageRefs=[];
+    objects[1]=asciiPdfBytes('<< /Type /Catalog /Pages 2 0 R >>');
+    for(var i=0;i<canvases.length;i++){
+      var imageId=3+i*3,contentId=imageId+1,pageId=imageId+2,canvas=canvases[i],jpeg=canvasJpegBytes(canvas);
+      pageRefs.push(pageId+' 0 R');
+      var imageStart='<< /Type /XObject /Subtype /Image /Width '+canvas.width+' /Height '+canvas.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpeg.length+' >>\nstream\n';
+      objects[imageId]=joinByteParts([asciiPdfBytes(imageStart),jpeg,asciiPdfBytes('\nendstream')]);
+      var content='q\n595.28 0 0 841.89 0 0 cm\n/Im0 Do\nQ';
+      objects[contentId]=asciiPdfBytes('<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream');
+      objects[pageId]=asciiPdfBytes('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 '+imageId+' 0 R >> >> /Contents '+contentId+' 0 R >>');
+    }
+    objects[2]=asciiPdfBytes('<< /Type /Pages /Kids ['+pageRefs.join(' ')+'] /Count '+canvases.length+' >>');
+    var chunks=[asciiPdfBytes('%PDF-1.4\n')],offsets=new Array(objectCount+1).fill(0),position=chunks[0].length;
+    for(var id=1;id<=objectCount;id++){
+      var prefix=asciiPdfBytes(id+' 0 obj\n'),suffix=asciiPdfBytes('\nendobj\n');
+      offsets[id]=position;chunks.push(prefix,objects[id],suffix);position+=prefix.length+objects[id].length+suffix.length;
+    }
+    var xrefOffset=position,xref='xref\n0 '+(objectCount+1)+'\n0000000000 65535 f \n';
+    for(var x=1;x<=objectCount;x++)xref+=String(offsets[x]).padStart(10,'0')+' 00000 n \n';
+    xref+='trailer\n<< /Size '+(objectCount+1)+' /Root 1 0 R >>\nstartxref\n'+xrefOffset+'\n%%EOF\n';
+    chunks.push(asciiPdfBytes(xref));
+    return new Blob(chunks,{type:'application/pdf'});
+  }
+
+  function makeWeeklyPdf(){
+    var data=collectWeeklyReportData(),pages=createReportCanvasPages(data),blob=createPdfBlob(pages);
+    var filename='otchet-'+data.weekStart+'-q'+data.quarter+'.pdf';
+    var amount=data.moneyEnabled?moneyText(data.total):'денежная мотивация отключена';
+    return {blob:blob,filename:filename,shareText:'Отчёт за неделю '+weekRange(parseDateKey(data.weekStart),false)+', '+data.quarter+' четверть. К выплате: '+amount+'.'};
+  }
+  function downloadReportFile(report){
+    var url=URL.createObjectURL(report.blob),a=document.createElement('a');
+    a.href=url;a.download=report.filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1500);
+  }
+  function setReportStatus(message,tone){
+    var el=document.getElementById('reportStatus');el.textContent=message;el.className='report-status'+(tone?' '+tone:'');
+  }
+  function downloadWeeklyReport(){
+    try{
+      setReportStatus('Готовим PDF…');
+      var report=makeWeeklyPdf();downloadReportFile(report);
+      setReportStatus('PDF отчёта скачан: '+report.filename,'success');
+    }catch(err){setReportStatus('Не удалось создать PDF. Попробуй ещё раз.','error');}
+  }
+  async function sendWeeklyReport(){
+    var button=document.getElementById('btnSendReport');button.disabled=true;button.textContent='Готовим PDF…';
+    try{
+      var report=makeWeeklyPdf();
+      if(typeof File==='function'&&navigator.share){
+        var file=new File([report.blob],report.filename,{type:'application/pdf'});
+        var canShareFile=typeof navigator.canShare!=='function'||navigator.canShare({files:[file]});
+        if(canShareFile){
+          await navigator.share({files:[file],title:'Отчёт за неделю',text:report.shareText});
+          setReportStatus('Меню «Поделиться» завершено. Проверь отправку в выбранном приложении.','success');
+        }else{
+          downloadReportFile(report);
+          setReportStatus('PDF скачан. Этот браузер не поддерживает передачу PDF через меню «Поделиться»; отправь файл из загрузок.','warning');
+        }
+      }else{
+        downloadReportFile(report);
+        setReportStatus('PDF скачан. Браузер не поддерживает меню отправки файлов; отправь PDF из загрузок.','warning');
+      }
+    }catch(err){
+      if(err&&err.name==='AbortError')setReportStatus('Отправка отменена; PDF не отправлен.','warning');
+      else{
+        try{var fallback=makeWeeklyPdf();downloadReportFile(fallback);setReportStatus('Меню отправки недоступно. PDF скачан — отправь его из загрузок.','warning');}
+        catch(fallbackError){setReportStatus('Не удалось создать или отправить PDF. Попробуй ещё раз.','error');}
+      }
+    }finally{button.disabled=false;button.textContent='↗ Отправить отчёт';}
+  }
+
+  function render(){
+    document.getElementById('classSelect').value=state.classNumber;
+    document.getElementById('quarterSelect').innerHTML=quarterOptions(state.quarter);
+    document.getElementById('weekQuarterSelect').innerHTML=quarterOptions(state.weekQuarter);
+    renderWeek();
+    renderWeeklyMoney();
+    renderMoneySettings();
+    renderQuarter();
+    renderYear();
+    save();
+  }
+
+  function switchTab(name){
+    if(name!=='week') closeWeekCalendar();
+    document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.toggle('active',x.id===name+'Panel')});
+    document.querySelectorAll('.nav-btn').forEach(function(x){x.classList.toggle('active',x.dataset.tab===name)});
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  var weekPickerWrap=document.getElementById('weekPickerWrap'),weekPickerTrigger=document.getElementById('weekPickerTrigger'),weekCalendar=document.getElementById('weekCalendar');
+  function closeWeekCalendar(){weekCalendar.hidden=true;weekPickerTrigger.setAttribute('aria-expanded','false')}
+  function openWeekCalendar(){var selected=parseDateKey(state.weekStart)||new Date();calendarMonth=new Date(selected.getFullYear(),selected.getMonth(),1);renderCalendar();weekCalendar.hidden=false;weekPickerTrigger.setAttribute('aria-expanded','true')}
+  weekPickerTrigger.addEventListener('click',function(){if(weekCalendar.hidden)openWeekCalendar();else closeWeekCalendar()});
+  weekCalendar.addEventListener('click',function(e){
+    var t=e.target.closest('[data-calendar]');if(!t)return;
+    if(t.dataset.calendar==='prev'){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar()}
+    else if(t.dataset.calendar==='next'){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);renderCalendar()}
+    else if(t.dataset.calendar==='select'&&validDateKey(t.dataset.weekStart)){state.weekStart=t.dataset.weekStart;calendarMonth=new Date(parseDateKey(state.weekStart).getFullYear(),parseDateKey(state.weekStart).getMonth(),1);closeWeekCalendar();render();weekPickerTrigger.focus()}
+  });
+  document.addEventListener('click',function(e){if(!weekPickerWrap.contains(e.target))closeWeekCalendar()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!weekCalendar.hidden){closeWeekCalendar();weekPickerTrigger.focus()}});
+
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-act],.nav-btn');if(!t)return;
+    if(t.classList.contains('nav-btn')){switchTab(t.dataset.tab);return}
+    var act=t.dataset.act;
+    if(act==='add-mark'){var s=findSubject(+t.dataset.id);if(s){s.marks.push({id:nextMarkId++,value:+t.dataset.g,quarter:state.weekQuarter,weekStart:state.weekStart});render()}}
+    if(act==='del-mark'){var sd=findSubject(+t.dataset.sid);if(sd){sd.marks=sd.marks.filter(function(m){return m.id!==+t.dataset.mid});render()}}
+    if(act==='del-subject'){var id=+t.dataset.id,sx=findSubject(id);if(sx&&(!sx.marks.length||confirm('Удалить предмет «'+sx.name+'» вместе с отметками?'))){state.subjects=state.subjects.filter(function(s){return s.id!==id});render()}}
+    if(act==='del-remark'){var rid=+t.dataset.rid;state.remarks=state.remarks.filter(function(r){return r.id!==rid});render()}
+  });
+
+  document.addEventListener('change',function(e){
+    var t=e.target;
+    if(t.id==='classSelect')state.classNumber=+t.value;
+    if(t.id==='quarterSelect')state.quarter=+t.value;
+    if(t.id==='weekQuarterSelect')state.weekQuarter=+t.value;
+    if(t.id==='moneyEnabled')state.money.enabled=t.checked;
+    if(t.id==='moneyCurrency')state.money.currency=t.value;
+    if(t.id==='remarkFine'){
+      var fine=parseFloat(t.value);
+      if(isFinite(fine)&&fine>=0)state.money.remarkFine=roundMoney(fine);
+    }
+    if(t.dataset.act==='set-money-rate'){
+      var moneyGrade=+t.dataset.grade,rate=parseFloat(t.value);
+      if(moneyGrade>=1&&moneyGrade<=10&&isFinite(rate))state.money.rates[moneyGrade]=roundMoney(rate);
+    }
+    if(t.dataset.act==='rename'){var s=findSubject(+t.dataset.id);if(s)s.name=t.value.trim()||'Предмет'}
+    if(t.dataset.act==='set-q-mark'){
+      var sq=findSubject(+t.dataset.sid);
+      if(sq){
+        sq.quarterMarks=sq.quarterMarks||{};
+        var val=t.value?+t.value:null;
+        sq.quarterMarks[+t.dataset.q]=val;
+      }
+    }
+    render();
+  });
+
+  function addSubjectGeneric(inputEl){
+    var n=inputEl.value.trim();if(!n){inputEl.focus();return}
+    state.subjects.push({id:state.nextId++,name:n,marks:[],quarterMarks:{1:null,2:null,3:null,4:null}});
+    inputEl.value='';render();inputEl.focus();
+  }
+  document.getElementById('btnAddSubject').onclick=function(){addSubjectGeneric(document.getElementById('newSubject'))};
+  document.getElementById('newSubject').onkeydown=function(e){if(e.key==='Enter')addSubjectGeneric(this)};
+  document.getElementById('btnAddSubjectYear').onclick=function(){addSubjectGeneric(document.getElementById('newSubjectYear'))};
+  document.getElementById('newSubjectYear').onkeydown=function(e){if(e.key==='Enter')addSubjectGeneric(this)};
+
+  function addWeekRemark(){
+    if(!state.money.enabled)return;
+    var input=document.getElementById('remarkInput');
+    var text=input.value.trim()||'Замечание';
+    state.remarks.push({id:nextRemarkId++,quarter:state.weekQuarter,weekStart:state.weekStart,text:text});
+    input.value='';
+    render();
+    input.focus();
+  }
+  document.getElementById('btnAddRemark').addEventListener('click',addWeekRemark);
+  document.getElementById('remarkInput').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addWeekRemark()}});
+  document.getElementById('btnDownloadReport').addEventListener('click',downloadWeeklyReport);
+  document.getElementById('btnSendReport').addEventListener('click',sendWeeklyReport);
+
+  document.getElementById('btnSyncFromQuarters').onclick=function(){
+    var count=0;
+    state.subjects.forEach(function(s){
+      s.quarterMarks=s.quarterMarks||{};
+      for(var q=1;q<=4;q++){
+        var ms=marksFor(s,q).map(function(m){return m.value});
+        var a=avg(ms);
+        if(a!==null){
+          s.quarterMarks[q]=Math.max(1,Math.min(10,Math.round(a)));
+          count++;
+        }
+      }
+    });
+    render();
+  };
+
+  document.getElementById('btnClearYearMarks').onclick=function(){
+    if(!confirm('Очистить все выставленные четвертные отметки?')) return;
+    state.subjects.forEach(function(s){
+      s.quarterMarks={1:null,2:null,3:null,4:null};
+    });
+    render();
+  };
+
+  document.getElementById('btnReset').onclick=function(){
+    if(confirm('Сбросить все данные и вернуть пример?')){
+      try{localStorage.removeItem(KEY);localStorage.removeItem(OLD_KEY);localStorage.removeItem(VERY_OLD_KEY);}catch(e){}
+      nextMarkId=1;nextRemarkId=1;state=fresh();render();
+    }
+  };
+
+  var deferredInstallPrompt=null,installButton=document.getElementById('btnInstallApp');
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();deferredInstallPrompt=e;installButton.hidden=false;
+  });
+  installButton.addEventListener('click',async function(){
+    if(!deferredInstallPrompt)return;
+    var promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;
+    try{await promptEvent.prompt();await promptEvent.userChoice;}catch(e){}
+    installButton.hidden=true;
+  });
+  window.addEventListener('appinstalled',function(){installButton.hidden=true;deferredInstallPrompt=null;});
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./service-worker.js').catch(function(error){console.warn('Не удалось включить офлайн-режим:',error);});
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
